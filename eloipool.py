@@ -96,7 +96,10 @@ import subprocess
 from time import time
 
 
-def makeCoinbaseTxn(coinbaseValue, useCoinbaser = True, prevBlockHex = None):
+def makeCoinbaseTxn(coinbaseValue, useCoinbaser=True, prevBlockHex=None):
+    """ Creates a new raw coinbase transaction with configurable payout through
+    use coinbaser command. Command attempts to split up the fee between
+    potentially multiple addresses. """
     txn = Txn.new()
 
     if useCoinbaser and hasattr(config, 'CoinbaserCmd') and config.CoinbaserCmd:

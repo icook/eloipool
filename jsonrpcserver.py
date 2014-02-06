@@ -50,6 +50,7 @@ class JSONRPCHandler(httpserver.HTTPHandler):
 
     def sendReply(self, status=200, body=b'', headers=None, *a, **ka):
         headers = dict(headers) if headers else {}
+        # manually detect json byte stream and set header
         if body and body[0] == 123:  # b'{'
             headers.setdefault('Content-Type', 'application/json')
         if status == 200 and self.path in self.JSONRPCURIs:
@@ -58,13 +59,13 @@ class JSONRPCHandler(httpserver.HTTPHandler):
             headers.setdefault('X-Long-Polling', '/LP')
         return super().sendReply(status, body, headers, *a, **ka)
 
-    def fmtError(self, reason = '', code = 100):
+    def fmtError(self, reason='', code=100):
         reason = json.dumps(reason)
         reason = r'{"result":null,"id":null,"error":{"name":"JSONRPCError","code":%d,"message":%s}}' % (code, reason)
         reason = reason.encode('utf8')
         return reason
 
-    def doError(self, reason = '', code = 100):
+    def doError(self, reason='', code=100):
         reason = self.fmtError(reason, code)
         return self.sendReply(500, reason)
 
@@ -82,10 +83,17 @@ class JSONRPCHandler(httpserver.HTTPHandler):
             quirks['SBB'] = None
 
         try:
-            if v[0] == b'v': v = v[1:]
+            # remove the 'v' from the beginning of v1.1
+            if v[0] == b'v':
+                v = v[1:]
+            # make a version tuple like (1,2,5,0,0,0), ensuring even
+            # v1 has two subversion segments
             v = tuple(map(int, v.split(b'.'))) + (0,0,0)
         except:
             pass
+
+        # based on useragent type and version, set features that they support,
+        # or quirck they dont
         if UA in self._MidstateNotAdv:
             if UA == b'phoenix':
                 if v != (1, 50, 0):
@@ -191,7 +199,8 @@ class JSONRPCHandler(httpserver.HTTPHandler):
             return
 
         try:
-            self.sendReply(200, body=rv, headers=self.LPHeaders, tryCompression=False)
+            self.sendReply(200, body=rv, headers=self.LPHeaders,
+                           tryCompression=False)
             raise httpserver.RequestNotHandled
         except httpserver.RequestHandled:
             # Expected
@@ -200,13 +209,20 @@ class JSONRPCHandler(httpserver.HTTPHandler):
             self.reset_request()
 
     def _doJSON_i(self, reqid, method, params, longpoll = False):
+        """ Run an RPC command and handle exceptions and return values """
         try:
             rv = getattr(self, method)(*params)
         except WithinLongpoll:
             self._LPCall = (reqid, method, params)
             raise
         except Exception as e:
-            self.logger.error(("Error during JSON-RPC call (UA=%s, IP=%s): %s%s\n" % (self.reqinfo.get('UA'), self.remoteHost, method, params)) + traceback.format_exc())
+            self.logger.error(
+                ("Error during JSON-RPC call (UA=%s, IP=%s): %s%s\n" % (
+                    self.reqinfo.get('UA'),
+                    self.remoteHost,
+                    method,
+                    params)) +
+                traceback.format_exc())
             efun = self.fmtError if longpoll else self.doError
             return efun(r'Service error: %s' % (e,))
         rv = {'id': reqid, 'error': None, 'result': rv}
@@ -218,7 +234,7 @@ class JSONRPCHandler(httpserver.HTTPHandler):
         rv = rv.encode('utf8')
         return rv if longpoll else self.sendReply(200, rv, headers=self._JSONHeaders)
 
-    def doJSON(self, data, longpoll = False):
+    def doJSON(self, data, longpoll=False):
         # TODO: handle JSON errors
         try:
             data = data.decode('utf8')
@@ -254,22 +270,22 @@ class JSONRPCHandler(httpserver.HTTPHandler):
         super().handle_close()
 
     def handle_request(self):
+        # ensure allowed method...
         if not self.method in (b'GET', b'POST'):
             return self.sendReply(405)
+
+        # check for valid endpoint being accessed
         if not self.path in self.JSONRPCURIs:
             if isinstance(self.path, bytes) and self.path[:5] == b'/src/':
                 return self.handle_src_request()
             return self.sendReply(404)
+        # redirect a non-authed user
         if not self.Username:
             return self.doAuthenticate()
         try:
             data = b''.join(self.incoming)
             return self.doJSON(data, self.path[:3] == b'/LP')
-        except socket.error:
-            raise
-        except WithinLongpoll:
-            raise
-        except httpserver.RequestHandled:
+        except (socket.error, WithinLongpoll, httpserver.RequestHandled):
             raise
         except:
             self.logger.error(traceback.format_exc())
