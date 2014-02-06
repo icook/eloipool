@@ -19,6 +19,10 @@ from struct import pack, unpack
 _ignoredrc = [0]
 
 def varlenDecode(b, rc = _ignoredrc):
+    """ Unpacks the variable count bytes present in raw transactions. First
+    byte signals overall length of and then byte lengths are reads accordingly.
+    Byte position pointer is incremented to indicate how many bytes were read.
+    """
 	if b[0] == 0xff:
 		rc[0] += 9
 		return (unpack('<Q', b[1:9])[0], b[9:])
@@ -32,6 +36,8 @@ def varlenDecode(b, rc = _ignoredrc):
 	return (b[0], b[1:])
 
 def varlenEncode(n):
+    """ This is the inverse of the above function, accepting a count and
+    encoding that count """
 	if n < 0xfd:
 		return pack('<B', n)
 	if n <= 0xffff:

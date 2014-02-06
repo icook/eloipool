@@ -14,9 +14,6 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-
 from collections import deque
 from datetime import date
 from time import sleep, time
@@ -28,6 +25,7 @@ import traceback
 _logger = logging.getLogger('sharelogging.logfile')
 
 class logfile(threading.Thread):
+    """ A thread based logger that flushes logs to file every 0.2 sec """
 	def __init__(self, filename, **ka):
 		super().__init__(**ka.get('thropts', {}))
 		self.fn=filename
@@ -37,16 +35,16 @@ class logfile(threading.Thread):
 		self.fmt = shareLogFormatter(ka['format'], '%s')
 		self.queue = deque()
 		self.start()
-	
+
 	def queueshare(self, line):
 		self.queue.append(line)
-	
+
 	def flushlog(self):
 		if len(self.queue) > 0:
 			with open(self.fn, "a") as logfile:
 				while len(self.queue)>0:
 					logfile.write(self.queue.popleft())
-	
+
 	def run(self):
 		while True:
 			try:
@@ -54,7 +52,7 @@ class logfile(threading.Thread):
 				self.flushlog()
 			except:
 				_logger.critical(traceback.format_exc())
-	
+
 	def logShare(self, share):
 		logline = self.fmt.formatShare(share)
 		self.queueshare(logline)
