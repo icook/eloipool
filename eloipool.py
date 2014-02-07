@@ -19,7 +19,8 @@
 import argparse
 import importlib
 argparser = argparse.ArgumentParser()
-argparser.add_argument('-c', '--config', help='Config name to load from config_<ARG>.py')
+argparser.add_argument('-c', '--config',
+                       help='Config name to load from config_<ARG>.py')
 args = argparser.parse_args()
 configmod = 'config'
 if not args.config is None:
@@ -38,7 +39,8 @@ import logging
 import logging.handlers
 
 rootlogger = logging.getLogger(None)
-logformat = getattr(config, 'LogFormat', '%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s')
+logformat = getattr(config, 'LogFormat',
+                    '%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s')
 logformatter = logging.Formatter(logformat)
 if len(rootlogger.handlers) == 0:
     logging.basicConfig(
@@ -58,15 +60,17 @@ if len(rootlogger.handlers) == 0:
     ):
         logging.getLogger(infoOnly).setLevel(logging.INFO)
 if getattr(config, 'LogToSysLog', False):
-    sysloghandler = logging.handlers.SysLogHandler(address = '/dev/log')
+    sysloghandler = logging.handlers.SysLogHandler(address='/dev/log')
     rootlogger.addHandler(sysloghandler)
 if hasattr(config, 'LogFile'):
     if isinstance(config.LogFile, str):
         filehandler = logging.FileHandler(config.LogFile)
     else:
-        filehandler = logging.handlers.TimedRotatingFileHandler(**config.LogFile)
+        filehandler = logging.handlers.TimedRotatingFileHandler(
+            **config.LogFile)
     filehandler.setFormatter(logformatter)
     rootlogger.addHandler(filehandler)
+
 
 def RaiseRedFlags(reason):
     logging.getLogger('redflag').critical(reason)
@@ -142,9 +146,12 @@ DupeShareHACK = {}
 
 server = None
 stratumsrv = None
+
+
 def updateBlocks():
     server.wakeLongpoll()
     stratumsrv.updateJob()
+
 
 def blockChanged():
     global MM, networkTarget, server
@@ -165,6 +172,7 @@ def blockChanged():
 from time import sleep, time
 import traceback
 
+
 def _WorkLogPruner_I(wl):
     now = time()
     pruned = 0
@@ -175,6 +183,7 @@ def _WorkLogPruner_I(wl):
                 del userwork[wli]
                 pruned += 1
     WorkLogPruner.logger.debug('Pruned %d jobs' % (pruned,))
+
 
 def WorkLogPruner(wl):
     while True:
@@ -219,11 +228,14 @@ else:
         config.DynamicTargetWindow = 120
     config.DynamicTargetGoal *= config.DynamicTargetWindow / 60
 
+
 def submitGotwork(info):
     try:
         gotwork.gotwork(info)
     except:
-        checkShare.logger.warning('Failed to submit gotwork\n' + traceback.format_exc())
+        checkShare.logger.warning(
+            'Failed to submit gotwork\n' + traceback.format_exc())
+
 
 def clampTarget(target, DTMode):
     # ShareTarget is the minimum
@@ -237,10 +249,10 @@ def clampTarget(target, DTMode):
     if DTMode == 2:
         # Ceil target to a power of two :)
         truebits = log(target, 2)
-        if target <= 2**int(truebits):
+        if target <= 2 ** int(truebits):
             # Workaround for bug in Python's math.log function
             truebits = int(truebits)
-        target = 2**ceil(truebits) - 1
+        target = 2 ** ceil(truebits) - 1
     elif DTMode == 3:
         # Round target to multiple of bdiff 1
         target = bdiff1target / int(round(target2bdiff(target)))
@@ -250,7 +262,8 @@ def clampTarget(target, DTMode):
         return None
     return target
 
-def getTarget(username, now, DTMode = None, RequestedTarget = None):
+
+def getTarget(username, now, DTMode=None, RequestedTarget=None):
     if DTMode is None:
         DTMode = config.DynamicTargetting
     if not DTMode:
@@ -270,28 +283,34 @@ def getTarget(username, now, DTMode = None, RequestedTarget = None):
         if not work:
             # No shares received, reset to minimum
             if targetIn:
-                getTarget.logger.debug("No shares from %s, resetting to minimum target" % (repr(username),))
+                getTarget.logger.debug(
+                    "No shares from %s, resetting to minimum target" % (repr(username),))
                 userStatus[username] = [None, now, 0]
             return clampTarget(None, DTMode)
 
     deltaSec = now - lastUpdate
     target = targetIn or config.ShareTarget
-    target = int(target * config.DynamicTargetGoal * deltaSec / config.DynamicTargetWindow / work)
+    target = int(target * config.DynamicTargetGoal *
+                 deltaSec / config.DynamicTargetWindow / work)
     target = clampTarget(target, DTMode)
     if target != targetIn:
         pfx = 'Retargetting %s' % (repr(username),)
         tin = targetIn or config.ShareTarget
-        getTarget.logger.debug("%s from: %064x (pdiff %s)" % (pfx, tin, target2pdiff(tin)))
+        getTarget.logger.debug("%s from: %064x (pdiff %s)" %
+                               (pfx, tin, target2pdiff(tin)))
         tgt = target or config.ShareTarget
-        getTarget.logger.debug("%s   to: %064x (pdiff %s)" % (pfx, tgt, target2pdiff(tgt)))
+        getTarget.logger.debug("%s   to: %064x (pdiff %s)" %
+                               (pfx, tgt, target2pdiff(tgt)))
     userStatus[username] = [target, now, 0]
     return target
 getTarget.logger = logging.getLogger('getTarget')
 
-def TopTargets(n = 0x10):
+
+def TopTargets(n=0x10):
     tmp = list(k for k, v in userStatus.items() if not v[0] is None)
     tmp.sort(key=lambda k: -userStatus[k][0])
     tmp2 = {}
+
     def t2d(t):
         if t not in tmp2:
             tmp2[t] = target2pdiff(t)
@@ -300,12 +319,14 @@ def TopTargets(n = 0x10):
         tgt = userStatus[k][0]
         print('%-34s %064x %3d' % (k, tgt, t2d(tgt)))
 
-def RegisterWork(username, wli, wld, RequestedTarget = None):
+
+def RegisterWork(username, wli, wld, RequestedTarget=None):
     now = time()
     target = getTarget(username, now, RequestedTarget=RequestedTarget)
     wld = tuple(wld) + (target,)
     workLog.setdefault(username, {})[wli] = (wld, now)
     return target or config.ShareTarget
+
 
 def getBlockHeader(username):
     MRD = MM.getMRD()
@@ -315,7 +336,8 @@ def getBlockHeader(username):
     target = RegisterWork(username, merkleRoot, MRD)
     return (hdr, workLog[username][merkleRoot], target)
 
-def getBlockTemplate(username, p_magic = None, RequestedTarget = None):
+
+def getBlockTemplate(username, p_magic=None, RequestedTarget=None):
     if server.tls.wantClear:
         wantClear = True
     elif p_magic and username not in workLog:
@@ -327,16 +349,18 @@ def getBlockTemplate(username, p_magic = None, RequestedTarget = None):
     (dummy, merkleTree, coinbase, prevBlock, bits) = MC[:5]
     wliPos = coinbase[0] + 2
     wliLen = coinbase[wliPos - 1]
-    wli = coinbase[wliPos:wliPos+wliLen]
+    wli = coinbase[wliPos:wliPos + wliLen]
     target = RegisterWork(username, wli, MC, RequestedTarget=RequestedTarget)
     return (MC, workLog[username][wli], target)
 
-def getStratumJob(jobid, wantClear = False):
+
+def getStratumJob(jobid, wantClear=False):
     MC = MM.getMC(wantClear)
     (dummy, merkleTree, coinbase, prevBlock, bits) = MC[:5]
     now = time()
     workLog.setdefault(None, {})[jobid] = (MC, now)
     return (MC, workLog[None][jobid])
+
 
 def getExistingStratumJob(jobid):
     wld = workLog[None][jobid]
@@ -356,6 +380,8 @@ if not hasattr(config, 'BlockSubmissions'):
     config.BlockSubmissions = None
 
 RBFs = []
+
+
 def blockSubmissionThread(payload, blkhash, share):
     if config.BlockSubmissions is None:
         servers = list(a for b in MM.TemplateSources for a in b)
@@ -398,12 +424,16 @@ def blockSubmissionThread(payload, blkhash, share):
             except BaseException as gmperr:
                 now = time()
                 if now > nexterr:
-                    # FIXME: This will show "Method not found" on pre-BIP22 servers
+                    # FIXME: This will show "Method not found" on pre-BIP22
+                    # servers
                     RaiseRedFlags(gbterr_fmt)
                     nexterr = now + 5
                 if MM.currentBlock[0] not in myblock and tries > len(servers):
-                    RBFs.append( (('next block', MM.currentBlock, now, (gbterr, gmperr)), payload, blkhash, share) )
-                    RaiseRedFlags('Giving up on submitting block to upstream \'%s\'' % (TS['name'],))
+                    RBFs.append(
+                        (('next block', MM.currentBlock, now, (gbterr, gmperr)), payload, blkhash, share))
+                    RaiseRedFlags(
+                        'Giving up on submitting block to upstream \'%s\'' %
+                        (TS['name'],))
                     if share['upstreamRejectReason'] is PendingUpstream:
                         share['upstreamRejectReason'] = 'GAVE UP'
                         share['upstreamResult'] = False
@@ -416,21 +446,25 @@ def blockSubmissionThread(payload, blkhash, share):
         # At this point, we have a reason back
         if reason:
             # FIXME: The returned value could be a list of multiple responses
-            msg = 'Upstream \'%s\' block submission failed: %s' % (TS['name'], reason,)
+            msg = 'Upstream \'%s\' block submission failed: %s' % (
+                TS['name'], reason,)
             if success and reason in ('stale-prevblk', 'bad-prevblk', 'orphan', 'duplicate'):
                 # no big deal
                 blockSubmissionThread.logger.debug(msg)
             else:
-                RBFs.append( (('upstream reject', reason, time()), payload, blkhash, share) )
+                RBFs.append(
+                    (('upstream reject', reason, time()), payload, blkhash, share))
                 RaiseRedFlags(msg)
         else:
-            blockSubmissionThread.logger.debug('Upstream \'%s\' accepted block' % (TS['name'],))
+            blockSubmissionThread.logger.debug(
+                'Upstream \'%s\' accepted block' % (TS['name'],))
             success = True
         if share['upstreamRejectReason'] is PendingUpstream:
             share['upstreamRejectReason'] = reason
             share['upstreamResult'] = not reason
             logShare(share)
 blockSubmissionThread.logger = logging.getLogger('blockSubmission')
+
 
 def checkData(share):
     data = share['data']
@@ -450,6 +484,7 @@ def checkData(share):
     if data[1:4] != b'\0\0\0' or data[0] > 2:
         raise RejectedShare('bad-version')
 
+
 def buildStratumData(share, merkleroot):
     (prevBlock, height, bits) = MM.currentBlock
 
@@ -463,7 +498,8 @@ def buildStratumData(share, merkleroot):
     share['data'] = data
     return data
 
-def IsJobValid(wli, wluser = None):
+
+def IsJobValid(wli, wluser=None):
     if wluser not in workLog:
         return False
     if wli not in workLog[wluser]:
@@ -472,6 +508,7 @@ def IsJobValid(wli, wluser = None):
     if time() < issueT - 120:
         return False
     return True
+
 
 def checkShare(share):
     shareTime = share['time'] = time()
@@ -495,7 +532,7 @@ def checkShare(share):
             coinbase = cbtxn.getCoinbase()
             wliPos = coinbase[0] + 2
             wliLen = coinbase[wliPos - 1]
-            wli = coinbase[wliPos:wliPos+wliLen]
+            wli = coinbase[wliPos:wliPos + wliLen]
             mode = 'MC'
             moden = 1
         else:
@@ -539,20 +576,23 @@ def checkShare(share):
     blkhashn = LEhash2int(blkhash)
 
     global networkTarget
-    logfunc = getattr(checkShare.logger, 'info' if blkhashn <= networkTarget else 'debug')
+    logfunc = getattr(checkShare.logger,
+                      'info' if blkhashn <= networkTarget else 'debug')
     logfunc('BLKHASH: %64x' % (blkhashn,))
     logfunc(' TARGET: %64x' % (networkTarget,))
 
-    # NOTE: this isn't actually needed for MC mode, but we're abusing it for a trivial share check...
+    # NOTE: this isn't actually needed for MC mode, but we're abusing it for a
+    # trivial share check...
     txlist = workMerkleTree.data
-    txlist = [deepcopy(txlist[0]),] + txlist[1:]
+    txlist = [deepcopy(txlist[0]), ] + txlist[1:]
     cbtxn = txlist[0]
     cbtxn.setCoinbase(coinbase or workCoinbase)
     cbtxn.assemble()
 
     if blkhashn <= networkTarget:
         logfunc("Submitting upstream")
-        RBDs.append( deepcopy( (data, txlist, share.get('blkdata', None), workMerkleTree, share, wld) ) )
+        RBDs.append(
+            deepcopy((data, txlist, share.get('blkdata', None), workMerkleTree, share, wld)))
         if not moden:
             payload = assembleBlock(data, txlist)
         else:
@@ -563,7 +603,8 @@ def checkShare(share):
                 payload += assembleBlock(data, txlist)[80:]
         logfunc('Real block payload: %s' % (b2a_hex(payload).decode('utf8'),))
         RBPs.append(payload)
-        threading.Thread(target=blockSubmissionThread, args=(payload, blkhash, share)).start()
+        threading.Thread(target=blockSubmissionThread,
+                         args=(payload, blkhash, share)).start()
         bcnode.submitBlock(payload)
         if config.DelayLogForUpstream:
             share['upstreamRejectReason'] = PendingUpstream
@@ -646,6 +687,7 @@ def checkShare(share):
                 raise RejectedShare('bad-txns')
 checkShare.logger = logging.getLogger('checkShare')
 
+
 def logShare(share):
     if '_origdata' in share:
         share['solution'] = share['_origdata']
@@ -654,15 +696,19 @@ def logShare(share):
     for i in loggersShare:
         i.logShare(share)
 
+
 def checkAuthentication(username, password):
     # HTTPServer uses bytes, and StratumServer uses str
-    if hasattr(username, 'decode'): username = username.decode('utf8')
-    if hasattr(password, 'decode'): password = password.decode('utf8')
+    if hasattr(username, 'decode'):
+        username = username.decode('utf8')
+    if hasattr(password, 'decode'):
+        password = password.decode('utf8')
 
     for i in authenticators:
         if i.checkAuthentication(username, password):
             return True
     return False
+
 
 def receiveShare(share):
     # TODO: username => userid
@@ -678,12 +724,14 @@ def receiveShare(share):
         if not share.get('upstreamRejectReason', None) is PendingUpstream:
             logShare(share)
 
+
 def newBlockNotification():
     logging.getLogger('newBlockNotification').info(
         'Received new block notification')
     MM.updateMerkleTree()
     # TODO: Force RESPOND TO LONGPOLLS?
     pass
+
 
 def newBlockNotificationSIGNAL(signum, frame):
     # Use a new thread, in case the signal handler is called with locks held
@@ -707,6 +755,7 @@ import traceback
 if getattr(config, 'SaveStateFilename', None) is None:
     config.SaveStateFilename = 'eloipool.worklog'
 
+
 def stopServers():
     logger = logging.getLogger('stopServers')
 
@@ -724,7 +773,8 @@ def stopServers():
         try:
             s.wakeup()
         except:
-            logger.error('Failed to stop server %s\n%s' % (s, traceback.format_exc()))
+            logger.error('Failed to stop server %s\n%s' %
+                         (s, traceback.format_exc()))
     i = 0
     while True:
         sl = []
@@ -735,7 +785,8 @@ def stopServers():
             break
         i += 1
         if i >= 0x100:
-            logger.error('Servers taking too long to stop (%s), giving up' % (', '.join(sl)))
+            logger.error('Servers taking too long to stop (%s), giving up' %
+                         (', '.join(sl)))
             break
         sleep(0.01)
 
@@ -743,12 +794,14 @@ def stopServers():
         for fd in s._fd.keys():
             os.close(fd)
 
+
 def stopLoggers():
     for i in loggersShare:
         if hasattr(i, 'stop'):
             i.stop()
 
-def saveState(SAVE_STATE_FILENAME, t = None):
+
+def saveState(SAVE_STATE_FILENAME, t=None):
     logger = logging.getLogger('saveState')
 
     # Then, save data needed to resume work
@@ -768,7 +821,10 @@ def saveState(SAVE_STATE_FILENAME, t = None):
                 try:
                     os.unlink(SAVE_STATE_FILENAME)
                 except:
-                    logger.error(('Failed to unlink \'%s\'; resume may have trouble\n' % (SAVE_STATE_FILENAME,)) + traceback.format_exc())
+                    logger.error(
+                        ('Failed to unlink \'%s\'; resume may have trouble\n' %
+                         (SAVE_STATE_FILENAME,)) + traceback.format_exc())
+
 
 def exit():
     t = time()
@@ -779,6 +835,7 @@ def exit():
     os.kill(os.getpid(), signal.SIGTERM)
     sys.exit(0)
 
+
 def restart():
     t = time()
     stopServers()
@@ -788,7 +845,9 @@ def restart():
     try:
         os.execv(sys.argv[0], sys.argv)
     except:
-        logging.getLogger('restart').error('Failed to exec\n' + traceback.format_exc())
+        logging.getLogger('restart').error(
+            'Failed to exec\n' + traceback.format_exc())
+
 
 def restoreState(SAVE_STATE_FILENAME):
     if not os.path.exists(SAVE_STATE_FILENAME):
@@ -798,7 +857,8 @@ def restoreState(SAVE_STATE_FILENAME):
 
     logger = logging.getLogger('restoreState')
     s = os.stat(SAVE_STATE_FILENAME)
-    logger.info('Restoring saved state from \'%s\' (%d bytes)' % (SAVE_STATE_FILENAME, s.st_size))
+    logger.info('Restoring saved state from \'%s\' (%d bytes)' %
+                (SAVE_STATE_FILENAME, s.st_size))
     try:
         with open(SAVE_STATE_FILENAME, 'rb') as f:
             t = pickle.load(f)
@@ -851,7 +911,8 @@ if __name__ == "__main__":
         name = i['type']
         parameters = i
         try:
-            fp, pathname, description = imp.find_module(name, sharelogging.__path__)
+            fp, pathname, description = imp.find_module(
+                name, sharelogging.__path__)
             m = imp.load_module(name, fp, pathname, description)
             lo = getattr(m, name)(**parameters)
             loggersShare.append(lo)
@@ -867,7 +928,8 @@ if __name__ == "__main__":
         name = i['module']
         parameters = i
         try:
-            fp, pathname, description = imp.find_module(name, authentication.__path__)
+            fp, pathname, description = imp.find_module(
+                name, authentication.__path__)
             m = imp.load_module(name, fp, pathname, description)
             lo = getattr(m, name)(**parameters)
             authenticators.append(lo)
