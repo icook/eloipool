@@ -1,2 +1,2 @@
 git+https://github.com/jgarzik/python-bitcoinrpc
-base58
+git+https://git.gitorious.org/bitcoin/python-base58.git

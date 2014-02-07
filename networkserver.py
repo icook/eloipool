@@ -276,7 +276,7 @@ class NetworkListener:
     def _makebind(self, *a, **ka):
         try:
             return self._makebind_py(*a, **ka)
-        except BaseException:
+        except Exception:
             try:
                 return self._makebind_su(*a, **ka)
             except:

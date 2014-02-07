@@ -17,14 +17,14 @@
 from jsonrpcserver import JSONRPCHandler
 
 class _setworkaux:
-	def doJSON_setworkaux(self, k, hexv = None):
-		if self.Username != self.server.SecretUser:
-			self.doAuthenticate()
-			return None
-		if hexv:
-			self.server.aux[k] = bytes.fromhex(hexv)
-		else:
-			del self.server.aux[k]
-		return True
+    def doJSON_setworkaux(self, k, hexv = None):
+        if self.Username != self.server.SecretUser:
+            self.doAuthenticate()
+            return None
+        if hexv:
+            self.server.aux[k] = bytes.fromhex(hexv)
+        else:
+            del self.server.aux[k]
+        return True
 
 JSONRPCHandler._register(_setworkaux)

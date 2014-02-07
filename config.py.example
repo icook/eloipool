@@ -69,18 +69,18 @@ CoinbaserCmd = 'echo -e "1\\n$((%d / 100))\\n1579aXhdwvKZEMrAKoCZhzGuqMa8EonuXU"
 # JSON-RPC servers to get block templates from
 # See https://en.bitcoin.it/wiki/BIP_0023#Logical_Services for key details
 TemplateSources = (
-	{
-		'name': 'primary',
-		'uri': 'http://user:pass@localhost:8332',
-		'priority': 0,
-		'weight': 1,
-	},
-	{
-		'name': 'secondary',
-		'uri': 'http://user:pass@localhost:18332',
-		'priority': 1,
-		'weight': 1,
-	},
+    {
+        'name': 'primary',
+        'uri': 'http://user:pass@localhost:8332',
+        'priority': 0,
+        'weight': 1,
+    },
+    {
+        'name': 'secondary',
+        'uri': 'http://user:pass@localhost:18332',
+        'priority': 1,
+        'weight': 1,
+    },
 )
 
 # JSON-RPC servers to check block proposals with
@@ -89,25 +89,25 @@ TemplateSources = (
 # NOTE: Any servers listed here MUST support BIP 23 Block Proposals
 # NOTE: Mainline bitcoind (as of 0.8) does NOT support this (though the 0.8.0.eligius branch does)
 TemplateChecks = (
-	{
-		'name': 'primary',
-		'uri': 'http://user:pass@localhost:8332',
-		
-		# If 'unanimous' is true, no template will be used if this node
-		# rejects it
-		'unanimous': False,
-		
-		# If check servers disagree on all templates, they will be scored and
-		# the highest score will be used; 'weight' can be used to control the
-		# scoring per-server
-		'weight': 1.1,
-	},
-	{
-		'name': 'secondary',
-		'uri': 'http://user:pass@localhost:18332',
-		'unanimous': False,
-		'weight': 1,
-	},
+    {
+        'name': 'primary',
+        'uri': 'http://user:pass@localhost:8332',
+        
+        # If 'unanimous' is true, no template will be used if this node
+        # rejects it
+        'unanimous': False,
+        
+        # If check servers disagree on all templates, they will be scored and
+        # the highest score will be used; 'weight' can be used to control the
+        # scoring per-server
+        'weight': 1.1,
+    },
+    {
+        'name': 'secondary',
+        'uri': 'http://user:pass@localhost:18332',
+        'unanimous': False,
+        'weight': 1,
+    },
 )
 
 # JSON-RPC servers to submit found blocks to (when they meet the full target)
@@ -118,14 +118,14 @@ TemplateChecks = (
 # If an empty list, and the block was found on a "clear" merkle root (not based
 # on any TemplateSource), the full TemplateSources list will be used.
 BlockSubmissions = (
-	{
-		'name': 'primary',
-		'uri': 'http://user:pass@localhost:8332',
-	},
-	{
-		'name': 'secondary',
-		'uri': 'http://user:pass@localhost:18332',
-	}
+    {
+        'name': 'primary',
+        'uri': 'http://user:pass@localhost:8332',
+    },
+    {
+        'name': 'secondary',
+        'uri': 'http://user:pass@localhost:18332',
+    }
 )
 
 # Templates will not be used unless they have an acceptance ratio above this
@@ -175,18 +175,18 @@ Greedy = False
 
 # Addresses to listen on for JSON-RPC GBT/getwork server
 JSONRPCAddresses = (
-	('', 8337),
+    ('', 8337),
 )
 
 # Addresses to listen on for Stratum mining server
 StratumAddresses = (
-	('', 3334),
+    ('', 3334),
 )
 
 # Addresses to listen on for Bitcoin node
 # Note this will only be used to distribute blocks the pool finds, nothing else
 BitcoinNodeAddresses = (
-	('', 8338),
+    ('', 8338),
 )
 
 # Addresses that are allowed to "spoof" from address with the X-Forwarded-For header
@@ -195,41 +195,41 @@ TrustedForwarders = ('::ffff:127.0.0.1',)
 
 # Logging of shares:
 ShareLogging = (
-	{
-		'type': 'logfile',
-		'filename': 'share-logfile',
-		'format': "{time} {Q(remoteHost)} {username} {YN(not(rejectReason))} {dash(YN(upstreamResult))} {dash(rejectReason)} {solution}\n",
-	},
-	{
-		'type': 'sql',
-		'engine': 'postgres',
-		'dbopts': {
-			'host': 'localhost',
-			'database': 'pooldb',
-			'user': 'eloipool',
-			'password': 'somethingsecret',
-		},
-		'statement': "insert into shares (rem_host, username, our_result, upstream_result, reason, solution) values ({Q(remoteHost)}, {username}, {YN(not(rejectReason))}, {YN(upstreamResult)}, {rejectReason}, decode({solution}, 'hex'))",
-	},
-	{
-		'type': 'sql',
-		'engine': 'mysql',
-		'dbopts': {
-			'host': 'localhost',
-			'db': 'pooldb',
-			'user': 'eloipool',
-			'password': 'somethingsecret',
-		},
-		'statement': "insert into shares (rem_host, username, our_result, upstream_result, reason, solution) values ({Q(remoteHost)}, {username}, {YN(not(rejectReason))}, {YN(upstreamResult)}, {rejectReason}, unhex({solution}))",
-	},
-	{
-		'type': 'sql',
-		'engine': 'sqlite',
-		'dbopts': {
-			'database': 'share.db',
-		},
-		'statement': "insert into shares (remoteHost, username, rejectReason, upstreamResult, solution) values ({remoteHost}, {username}, {rejectReason}, {upstreamResult}, {solution})",
-	},
+    {
+        'type': 'logfile',
+        'filename': 'share-logfile',
+        'format': "{time} {Q(remoteHost)} {username} {YN(not(rejectReason))} {dash(YN(upstreamResult))} {dash(rejectReason)} {solution}\n",
+    },
+    {
+        'type': 'sql',
+        'engine': 'postgres',
+        'dbopts': {
+            'host': 'localhost',
+            'database': 'pooldb',
+            'user': 'eloipool',
+            'password': 'somethingsecret',
+        },
+        'statement': "insert into shares (rem_host, username, our_result, upstream_result, reason, solution) values ({Q(remoteHost)}, {username}, {YN(not(rejectReason))}, {YN(upstreamResult)}, {rejectReason}, decode({solution}, 'hex'))",
+    },
+    {
+        'type': 'sql',
+        'engine': 'mysql',
+        'dbopts': {
+            'host': 'localhost',
+            'db': 'pooldb',
+            'user': 'eloipool',
+            'password': 'somethingsecret',
+        },
+        'statement': "insert into shares (rem_host, username, our_result, upstream_result, reason, solution) values ({Q(remoteHost)}, {username}, {YN(not(rejectReason))}, {YN(upstreamResult)}, {rejectReason}, unhex({solution}))",
+    },
+    {
+        'type': 'sql',
+        'engine': 'sqlite',
+        'dbopts': {
+            'database': 'share.db',
+        },
+        'statement': "insert into shares (remoteHost, username, rejectReason, upstreamResult, solution) values ({remoteHost}, {username}, {rejectReason}, {upstreamResult}, {solution})",
+    },
 )
 
 # Authentication
@@ -237,13 +237,13 @@ ShareLogging = (
 # - allowall will allow every username/password combination
 # - simplefile will use the username/passwords from a file, which contains username<tab>password\n with no \n on the last line.
 Authentication =  (
-	{
-		'module': 'allowall',
-	},
-#	{
-#		'module': 'simplefile',
-#		'filename': 'userdatabase',
-#	},
+    {
+        'module': 'allowall',
+    },
+#   {
+#       'module': 'simplefile',
+#       'filename': 'userdatabase',
+#   },
 )
 
 ### Settings related to poolserver logging
@@ -260,9 +260,9 @@ Authentication =  (
 
 # For a rotating log file:
 LogFile = {
-	'filename': 'filename.log',
-	'when': 'midnight',
-	'backupCount': 7,
+    'filename': 'filename.log',
+    'when': 'midnight',
+    'backupCount': 7,
 }
 # For details, see:
 # http://docs.python.org/3/library/logging.handlers.html#logging.handlers.TimedRotatingFileHandler

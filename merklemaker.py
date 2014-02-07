@@ -22,7 +22,7 @@ from bitcoin.varlen import varlenEncode, varlenDecode
 from collections import deque
 from copy import deepcopy
 from queue import Queue
-import jsonrpc
+import bitcoinrpc
 import logging
 from math import log
 from merkletree import MerkleTree
@@ -119,7 +119,7 @@ class merkleMaker(threading.Thread):
             """ Fetches and caches a service proxy for accessing the source uri
             """
             if uri not in _URI2Access:
-                access = jsonrpc.ServiceProxy(uri)
+                access = bitcoinrpc.authproxy.AuthServiceProxy(uri)
                 access.OldGMP = False
                 _URI2Access[uri] = access
             return _URI2Access[uri]
@@ -462,8 +462,10 @@ class merkleMaker(threading.Thread):
             caccess = TC['access']
             try:
                 propose = caccess.getblocktemplate(ProposeReq)
-            except (socket.error, ValueError) as e:
-                self.logger.error('Upstream \'%s\' errored on proposal from \'%s\': %s' % (TC['name'], TS['name'], e))
+            except (socket.error, ValueError, bitcoinrpc.JSONRPCException) as e:
+                self.logger.error(
+                    "Upstream '{}' errored on proposal from '{}'. Payload: {}"
+                    .format(TC['name'], TS['name'], ProposeReq), exc_info=True)
                 ProposalErrors[TC['name']] = e
                 continue
             if propose is None:
@@ -744,8 +746,9 @@ class merkleMaker(threading.Thread):
         while True:
             try:
                 self.merkleMaker_I()
-            except:
-                self.logger.critical(traceback.format_exc())
+            except Exception:
+                self.logger.critical("Unhandled exception in MerkleMaker",
+                                     exc_info=True)
 
     def start(self, *a, **k):
         """ Thread init method """

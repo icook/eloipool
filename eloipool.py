@@ -82,11 +82,11 @@ bcnode = BitcoinNode(config.UpstreamNetworkId)
 bcnode.userAgent += b'Eloipool:0.1/'
 bcnode.newBlock = lambda blkhash: MM.updateMerkleTree()
 
-import jsonrpc
+import bitcoinrpc
 
 try:
-    import jsonrpc.authproxy
-    jsonrpc.authproxy.USER_AGENT = 'Eloipool/0.1'
+    import bitcoinrpc.authproxy
+    bitcoinrpc.authproxy.USER_AGENT = 'Eloipool/0.1'
 except:
     pass
 
@@ -120,7 +120,9 @@ def makeCoinbaseTxn(coinbaseValue, useCoinbaser=True, prevBlockHex=None):
                 pkScript = BitcoinScript.toAddress(addr)
                 txn.addOutput(amount, pkScript)
                 coinbased += amount
-        except:
+        except Exception:
+            logging.getLogger('makeCoinbaseTxn').warn(
+                'Error running coinbaser', exc_info=True)
             coinbased = coinbaseValue + 1
         if coinbased >= coinbaseValue:
             logging.getLogger('makeCoinbaseTxn').error('Coinbaser failed!')
@@ -216,7 +218,7 @@ import traceback
 
 gotwork = None
 if hasattr(config, 'GotWorkURI'):
-    gotwork = jsonrpc.ServiceProxy(config.GotWorkURI)
+    gotwork = bitcoinrpc.ServiceProxy(config.GotWorkURI)
 
 if not hasattr(config, 'DelayLogForUpstream'):
     config.DelayLogForUpstream = False
@@ -390,7 +392,7 @@ def blockSubmissionThread(payload, blkhash, share):
 
     if hasattr(share['merkletree'], 'source_uri'):
         servers.insert(0, {
-            'access': jsonrpc.ServiceProxy(share['merkletree'].source_uri),
+            'access': bitcoinrpc.ServiceProxy(share['merkletree'].source_uri),
             'name': share['merkletree'].source,
         })
     elif not servers:
@@ -408,7 +410,7 @@ def blockSubmissionThread(payload, blkhash, share):
         try:
             # BIP 22 standard submitblock
             reason = UpstreamBitcoindJSONRPC.submitblock(payload)
-        except BaseException as gbterr:
+        except Exception as gbterr:
             gbterr_fmt = traceback.format_exc()
             try:
                 try:
@@ -421,7 +423,7 @@ def blockSubmissionThread(payload, blkhash, share):
                     reason = None
                 elif reason is False:
                     reason = 'rejected'
-            except BaseException as gmperr:
+            except Exception as gmperr:
                 now = time()
                 if now > nexterr:
                     # FIXME: This will show "Method not found" on pre-BIP22
@@ -717,7 +719,7 @@ def receiveShare(share):
     except RejectedShare as rej:
         share['rejectReason'] = str(rej)
         raise
-    except BaseException:
+    except Exception:
         share['rejectReason'] = 'ERROR'
         raise
     finally:

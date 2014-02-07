@@ -139,7 +139,7 @@ def BEhash2int(h):
     return n
 
 def tryErr(func, *a, **kw):
-    IE = kw.pop('IgnoredExceptions', BaseException)
+    IE = kw.pop('IgnoredExceptions', Exception)
     logger = kw.pop('Logger', None)
     emsg = kw.pop('ErrorMsg', None)
     try:

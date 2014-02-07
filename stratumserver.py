@@ -27,7 +27,7 @@ import traceback
 from util import RejectedShare, swap32, target2bdiff
 
 
-class StratumError(BaseException):
+class StratumError(Exception):
     def __init__(self, errno, msg, tb=True):
         self.StratumErrNo = errno
         self.StratumErrMsg = msg
@@ -78,7 +78,7 @@ class StratumHandler(networkserver.SocketHandler):
                 return
             try:
                 getattr(self, funcname)(rpc)
-            except BaseException as e:
+            except Exception as e:
                 self.logger.debug(traceback.format_exc())
             return
 
@@ -100,7 +100,7 @@ class StratumHandler(networkserver.SocketHandler):
                 'result': None,
             })
             return
-        except BaseException as e:
+        except Exception as e:
             fexc = traceback.format_exc()
             self.sendReply({
                 'error': (20, str(e), fexc),

@@ -26,33 +26,33 @@ _logger = logging.getLogger('sharelogging.logfile')
 
 class logfile(threading.Thread):
     """ A thread based logger that flushes logs to file every 0.2 sec """
-	def __init__(self, filename, **ka):
-		super().__init__(**ka.get('thropts', {}))
-		self.fn=filename
-		if 'format' not in ka:
-			_logger.warn('"format" not specified for logfile logger, but default may vary!')
-			ka['format'] = "{time} {Q(remoteHost)} {username} {YN(not(rejectReason))} {dash(YN(upstreamResult))} {dash(rejectReason)} {solution} {target2pdiff(target)}\n"
-		self.fmt = shareLogFormatter(ka['format'], '%s')
-		self.queue = deque()
-		self.start()
+    def __init__(self, filename, **ka):
+        super().__init__(**ka.get('thropts', {}))
+        self.fn=filename
+        if 'format' not in ka:
+            _logger.warn('"format" not specified for logfile logger, but default may vary!')
+            ka['format'] = "{time} {Q(remoteHost)} {username} {YN(not(rejectReason))} {dash(YN(upstreamResult))} {dash(rejectReason)} {solution} {target2pdiff(target)}\n"
+        self.fmt = shareLogFormatter(ka['format'], '%s')
+        self.queue = deque()
+        self.start()
 
-	def queueshare(self, line):
-		self.queue.append(line)
+    def queueshare(self, line):
+        self.queue.append(line)
 
-	def flushlog(self):
-		if len(self.queue) > 0:
-			with open(self.fn, "a") as logfile:
-				while len(self.queue)>0:
-					logfile.write(self.queue.popleft())
+    def flushlog(self):
+        if len(self.queue) > 0:
+            with open(self.fn, "a") as logfile:
+                while len(self.queue)>0:
+                    logfile.write(self.queue.popleft())
 
-	def run(self):
-		while True:
-			try:
-				sleep(0.2)
-				self.flushlog()
-			except:
-				_logger.critical(traceback.format_exc())
+    def run(self):
+        while True:
+            try:
+                sleep(0.2)
+                self.flushlog()
+            except:
+                _logger.critical(traceback.format_exc())
 
-	def logShare(self, share):
-		logline = self.fmt.formatShare(share)
-		self.queueshare(logline)
+    def logShare(self, share):
+        logline = self.fmt.formatShare(share)
+        self.queueshare(logline)

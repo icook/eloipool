@@ -24,7 +24,7 @@ import traceback
 
 WithinLongpoll = httpserver.AsyncRequest
 
-class _SentJSONError(BaseException):
+class _SentJSONError(Exception):
     def __init__(self, rv):
         self.rv = rv
 
